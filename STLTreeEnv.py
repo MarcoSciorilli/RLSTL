@@ -167,7 +167,10 @@ class STLTreeEnv(object):
             n_var=3
             mu0 = BaseMeasure( sigma0=initial_std, sigma1=total_var_std, q=0.1)
             kernel = StlKernel(mu0, samples=10000, sigma2=0.44, varn=n_var)
-            similarity = kernel.compute_bag_bag([current_embedding.get_STL_formula()], [self.end]).cpu().numpy()[0][0]
+            try:
+                similarity = kernel.compute_bag_bag([current_embedding.get_STL_formula()], [self.end]).cpu().numpy()[0][0]
+            except Exception as e:
+                similarity = - 10
 
             return similarity
         else:
