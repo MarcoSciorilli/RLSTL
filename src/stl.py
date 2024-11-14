@@ -37,8 +37,6 @@ def eventually(x: Tensor, time_span: int) -> Tensor:
     torch.Tensor
     A tensor containing the result of the operation.
     """
-    if x.size(-1) < time_span:
-        print(x.size(-1),time_span)
     return F.max_pool1d(x, kernel_size=time_span, stride=1)
 
 

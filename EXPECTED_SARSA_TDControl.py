@@ -2,11 +2,11 @@ import numpy as np
 from QValueTree import QValueTree
 
 
-class Qlearning_TDControl():
+class EXPECTED_SARSA_TDControl():
     def __init__(self,
-             actions_size,random_actions_probabilities,
-             gamma=1,
-             lr_v=0.01):
+                 actions_size,random_actions_probabilities,
+                 gamma=1,
+                 lr_v=0.01):
         """
         Calculates optimal policy using in-policy Temporal Difference control
         Evaluates Q-value for (S,A) pairs, using one-step updates.
@@ -22,8 +22,9 @@ class Qlearning_TDControl():
 
         # where to save returns
         self.Qvalues = QValueTree()
+
     # -------------------
-    def single_step_update(self, s, a, r, new_s, done):
+    def single_step_update(self, s, a, r, new_s, done, eps):
         """
         Uses a single step to update the values, using Temporal Difference for Q values.
         Employs the EXPERIENCED action in the new state  <- Q(S_new, A_new).
@@ -35,14 +36,15 @@ class Qlearning_TDControl():
         else:
             # in TD(0) it was
             # delta = (r + gamma*self.values[new_s] - self.values[s])
-            # Notice that I evaluate Qvalue at the new_s only for the action new_a that I really took!
-            maxQ_over_actions = self.Qvalues.find_best_qvalue(new_s )
 
+            # Notice that I evaluate the EXPECTED Qvalue for the new_s weighted by the probability of taking
+            # the action (i.e. the policy) !
+            all_qvalues, all_actions = self.Qvalues.get_all_qvalues(new_s)
             deltaQ = (r +
-                      self.gamma * maxQ_over_actions
-                                 - self.Qvalues.get_state_action_pair_value( s,a))
-
+                      self.gamma * ( all_qvalues * self.policy(new_s, eps)[all_actions])
+                                                                      - self.Qvalues.get_state_action_pair_value( s,a))
         self.Qvalues.update_state_action_pair(s, a, self.lr_v * deltaQ)
+
 
     # ---------------------
     def get_action_epsilon_greedy(self, s, eps):
@@ -62,7 +64,19 @@ class Qlearning_TDControl():
         a = np.random.choice(self.actions_size, p=prob_actions)
         return a
 
-    def greedy_policy(self):
-        greedy_pol = np.argmax(self.Qvalues, axis = 2)
-        return greedy_pol
 
+    def policy(self, s, eps):
+        """
+        Probabilities from an epsilon-greedy policy wrt the current Q(s,a).
+        """
+        # Uniform (epsilon) probability for all actions...
+        policy = np.ones(self.actions_size) / self.actions_size * eps
+        # ... plus 1-epsilon probabilities for best actions:
+        # First I find the best values
+        # There could be actions with equal value!
+        # This mask is 1 if the value is equal to the best (tie)
+        # or 0 if the action is suboptimal
+        best_actions =  self.Qvalues.find_best_qvalue_actions(s)
+        if len(best_actions)>0:
+            policy[best_actions] += 1 / len(best_actions) * (1 - eps)
+        return policy

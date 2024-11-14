@@ -1,6 +1,11 @@
+import torch
+import random
 import src.stl as stl
 from src.kernel import StlKernel
 from src.traj_measure import BaseMeasure
+import GPUtil
+import time
+import random
 
 class STLTreeNode(object):
     def __init__(self, args):
@@ -159,18 +164,44 @@ class STLTreeEnv(object):
         # Keeps track of terminal state
         self.done = False
 
+    def get_first_free_gpu(self, min_memory=3000, max_load=1, wait=True):
+        while True:
+            GPUs = GPUtil.getGPUs()
+            random.shuffle(GPUs)
+            for gpu in GPUs:
+                if gpu.memoryFree >= min_memory and gpu.load <= max_load:
+                    return gpu.id
+            if not wait:
+                return None
+            print("No available GPU found. Waiting...")
+            time.sleep(1)
     def get_distance_from_target(self, current_embedding):
         if current_embedding.check_completeness():
-            # device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device_id = self.get_first_free_gpu()
+            device = f"cuda:{device_id}"
             initial_std = 1.0  # standard deviation of normal distribution of initial state
             total_var_std = 1.0
             n_var=3
-            mu0 = BaseMeasure( sigma0=initial_std, sigma1=total_var_std, q=0.1)
-            kernel = StlKernel(mu0, samples=10000, sigma2=0.44, varn=n_var)
+
+
+
             try:
+                mu0 = BaseMeasure(sigma0=initial_std, sigma1=total_var_std, q=0.1, device=device)
+                kernel = StlKernel(mu0, samples=10000, sigma2=0.44, varn=n_var)
                 similarity = kernel.compute_bag_bag([current_embedding.get_STL_formula()], [self.end]).cpu().numpy()[0][0]
+            except torch.cuda.OutOfMemoryError as e:
+                try:
+                    mu0 = BaseMeasure(sigma0=initial_std, sigma1=total_var_std, q=0.1, device='cpu')
+                    kernel = StlKernel(mu0, samples=10000, sigma2=0.44, varn=n_var)
+                    similarity = \
+                        kernel.compute_bag_bag([current_embedding.get_STL_formula()], [self.end]).cpu().numpy()[0][
+                            0]
+                except Exception as a:
+                    similarity = - 10
             except Exception as e:
                 similarity = - 10
+
+            torch.cuda.empty_cache()
 
             return similarity
         else:

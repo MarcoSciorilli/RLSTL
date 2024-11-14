@@ -2,7 +2,6 @@ import numpy as np
 from QValueTree import QValueTree
 
 
-
 class SARSA_TDControl():
     def __init__(self,
                  actions_size, random_actions_probabilities,
@@ -56,7 +55,8 @@ class SARSA_TDControl():
             prob_actions = self.random_actions_probabilities
 
         else:
-            prob_actions = self.Qvalues.find_best_qvalue(s, self.actions_size, self.random_actions_probabilities)
+            prob_actions = self.Qvalues.find_best_qvalue_actions_probabilities(s, self.actions_size,
+                                                                               self.random_actions_probabilities)
 
         # take one action from the array of actions with the probabilities as defined above.
         a = np.random.choice(self.actions_size, p=prob_actions)
