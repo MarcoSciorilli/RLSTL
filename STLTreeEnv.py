@@ -9,6 +9,13 @@ import random
 
 class STLTreeNode(object):
     def __init__(self, args):
+        """
+        Data Structure of a Node of an STLTree. Each node is defined by its children, and the type of STL operator
+        it is. Given that some operator can be implemented only when its children are already define, the STL operator
+        store in the node is actually initialized only when all the conditions are met
+        :param args: tuple of STL operator type (as a string), and a dictionary with the information needed to
+                    that specific type of node.
+        """
         self.left = None
         self.right = None
         self.node_type = args[0]
@@ -30,6 +37,10 @@ class STLTreeNode(object):
         return stl.Atom(variable, quartile, lte)
 
     def update_node(self):
+        """
+        Method initialising the STL operator given all the needed information. choose_atomic_node and
+        _get_temporal_parameters are ancillary method for it.
+        """
         if self.node_type == 'not':
             self.STLnode = stl.Not(self.left.STLnode)
         elif self.node_type == 'and':
@@ -64,6 +75,12 @@ class STLTreeNode(object):
 
 class STLTree(object):
     def __init__(self):
+        """
+        Class implement an STL formula as a binary datastructure. It implements all standard method needed to
+        use a binary tree: finding a node, adding a node, traversing the tree, adding a root, and updating the
+        tree. Un update method is implemented to check if the current state of the tree translate to a meaningful STL
+        formula.
+        """
         self.root = None
 
     def _add_tree_root_(self,new_tree_root):
@@ -150,7 +167,12 @@ class STLTree(object):
 class STLTreeEnv(object):
     def __init__(self, target_embedding, max_nodes_number):
         """
-        Defines a GridWorld with start and end sites.
+        Defines as an environment the space of possible STL formulas trees. As the rewards are given by the distance
+        to a point in the enviroment space, this point has to be provided through the target_embedding variable. Given that
+        we want to generate formulas of a maximum lenght, the maximum number of nodes has to be provided to correctly
+        encode the coffin state.
+        :target_embeggin target STL formula that we want to get close to, as a SLT formula
+        :max_nodes_number maximum number of nodes in the SLT formula tree that we want to generate
         """
 
         # Reads the position of start and end
@@ -165,6 +187,13 @@ class STLTreeEnv(object):
         self.done = False
 
     def get_first_free_gpu(self, min_memory=3000, max_load=1, wait=True):
+        '''
+        Just an hacky function to parallelize over GPUs
+        :param min_memory:
+        :param max_load:
+        :param wait:
+        :return:
+        '''
         while True:
             GPUs = GPUtil.getGPUs()
             random.shuffle(GPUs)
@@ -175,7 +204,15 @@ class STLTreeEnv(object):
                 return None
             print("No available GPU found. Waiting...")
             time.sleep(1)
+
     def get_distance_from_target(self, current_embedding):
+        """
+        The reward is defined as the similiarity between the embedding of the currente state and the target embedding.
+        If the current state does not correspond to a complete STL formula, the reward is 0.
+        If the current state corresponds to a complete STL formula that does not make sense, the reward is -10
+        :param current_embedding: current embedding as an STL tree formula
+        :return: The reward
+        """
         if current_embedding.check_completeness():
             device_id = self.get_first_free_gpu()
             device = f"cuda:{device_id}"
@@ -209,7 +246,7 @@ class STLTreeEnv(object):
 
     def reset(self):
         """
-        Resets the GridWorld to the starting position.
+        Resets the environment and similarity to the starting position.
         """
         # Reset the environment to initial state
         self.current_state = STLTree()
@@ -220,19 +257,21 @@ class STLTreeEnv(object):
         """
         Evolves the environment given action A and current state.
         """
-        # Check if action A is in proper set
+
         self.current_state.add_node(A)
 
         similarity = self.get_distance_from_target(self.current_state)
+        # If instead of getting closer I go more far away, i get penalized
         if similarity !=0:
             reward = similarity - self.current_similarity
         else:
             reward = 0
         if similarity>self.current_similarity:
             self.current_similarity = similarity
-        # If I fall over the ridge, I go back to the start and get a penalty
+        # If I'm close enought, I reached my target
         if self.get_distance_from_target(self.current_state) >0.8:
             self.done = True
+        # If when I used all available nodes, I still have no complete STL formula, I get a big negative reward.
         if (nodes_number == self.max_nodes_number) and (self.current_similarity ==0):
             reward = - 0.8*self.max_nodes_number
 
