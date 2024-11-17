@@ -41,14 +41,13 @@ class QValueTree(object):
     def find_best_qvalue_actions_probabilities(self, state, action_number, random_actions_probabilities):
         best_qvalue = 0
         best_actions = []
-        if not state:
-            return random_actions_probabilities
+
         node = self.find_node(state)
         if not node.children:
             prob_actions = random_actions_probabilities
         else:
-            for child in  node.children:
-                if node.children[child].value > best_qvalue:
+            for child in node.children:
+                if node.children[child].value >= best_qvalue:
                     best_qvalue = node.children[child].value
 
             for child in  node.children:
@@ -81,10 +80,10 @@ class QValueTree(object):
     def get_all_qvalues(self, state):
         qvalues = []
         actions = []
-        if not state:
-            return qvalues, actions
         node = self.find_node(state)
         if not node.children:
+            qvalues.append(0)
+            actions.append(0)
             return qvalues, actions
         else:
             for child in  node.children:

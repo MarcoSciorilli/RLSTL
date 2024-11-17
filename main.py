@@ -92,7 +92,7 @@ def single_instance_random(target):
                 pickle.dump(rewards_data, file)
 
 
-def single_instance_SARSA(target, epsilon ):
+def single_instance_SARSA(target, epsilon_0 ):
     np.random.seed(target)
     atom_threshold_sd = 1.0
 
@@ -143,30 +143,35 @@ def single_instance_SARSA(target, epsilon ):
     # Initialize the hyperparameters, SARSA and the enviroment
     gamma = 1.0
     # learning rate
-    lr_v = 0.1
+    lr_v_0 = 0.5
+    lr_v = lr_v_0
     n_episodes = 2000
 
     rewards_data = []
     max_nodes_number = 30
 
     env = STLTreeEnv(target_embedding,max_nodes_number)
-
+    epsilon = epsilon_0
     SARSA = SARSA_TDControl( actions_size=len(Actions),random_actions_probabilities = random_actions_probabilities, gamma=gamma, lr_v=lr_v)
     atomic_predicates= []
+    count = 0
+
     # RUN OVER EPISODES
     for i in range(n_episodes):
         done = False
         env.reset()
         s = []
         a = SARSA.get_action_epsilon_greedy(s, epsilon)
+        SARSA.Qvalues.add_state_action_pair(s, a)
+
         act = Actions[a]
         new_s = s.copy()
         rewards=0
         current_similarity = 0
         for steps in range(max_nodes_number+1):
+            count +=1
             # Evolve one step|
             formula, r, done, current_similarity = env.step(act, steps)
-            SARSA.Qvalues.add_state_action_pair(s, a)
             rewards+=r
             # Save observed reward
             new_s += [a]
@@ -178,27 +183,28 @@ def single_instance_SARSA(target, epsilon ):
             act = Actions[new_a]
             a = new_a
             s = new_s.copy()
+            SARSA.Qvalues.add_state_action_pair(s, a)
+
             if done:
                 atomic_predicates.append(formula)
-                with open(f'SARSA_instance_{target}_formulas_{epsilon}', 'wb') as file:
+                with open(f'SARSA_instance_{target}_formulas_{epsilon_0}_constant', 'wb') as file:
                     pickle.dump(atomic_predicates, file)
                 break
 
-            # if count > tstar:
-            #     # UPDATE OF LEARNING
-            #     SARSA.lr_v = lr_v_0/(1 + 0.003*(count - tstar)**0.75)
-            #     # UPDATE OF EPSILON
-            #     epsilon = epsilon_0/(1. + 0.005*(count - tstar)**1.05)
-        print(f"instance: {target}  eps:{epsilon}  episode: {i}  similarity:{current_similarity}" )
+            # UPDATE OF LEARNING
+            SARSA.lr_v = lr_v_0/(1 + 0.003*(count)**0.75)
+            # UPDATE OF EPSILON
+            # epsilon = epsilon_0/(1. + 0.005*(count)**1.05)
+        print(f"instance: {target}  eps:{epsilon_0}  episode: {i}  similarity:{current_similarity}_constant" )
         rewards_data.append([rewards, current_similarity])
-        with open(f'SARSA_instance_{target}_rewards_data_{epsilon}', 'wb') as file:
+        with open(f'SARSA_instance_{target}_rewards_data_{epsilon_0}_constant', 'wb') as file:
                 pickle.dump(rewards_data, file)
         if i%100==0:
-            with open(f'SARSA_Q_{target}_data_{epsilon}', 'wb') as file:
+            with open(f'SARSA_Q_{target}_data_{epsilon_0}', 'wb') as file:
                 pickle.dump(SARSA, file)
 
 
-def single_instance_Qlearning(target, epsilon ):
+def single_instance_Qlearning(target, epsilon_0 ):
     np.random.seed(target)
     atom_threshold_sd = 1.0
 
@@ -248,31 +254,34 @@ def single_instance_Qlearning(target, epsilon ):
 
     # Initialize the hyperparameters, SARSA and the enviroment
     gamma = 1.0
+    lr_v_0 = 0.5
     # learning rate
-    lr_v = 0.1
+    lr_v = lr_v_0
     n_episodes = 2000
 
     rewards_data = []
     max_nodes_number = 30
-
+    epsilon = epsilon_0
     env = STLTreeEnv(target_embedding,max_nodes_number)
 
     Qlearning = Qlearning_TDControl( actions_size=len(Actions),random_actions_probabilities = random_actions_probabilities, gamma=gamma, lr_v=lr_v)
     atomic_predicates= []
+    count =0
     # RUN OVER EPISODES
     for i in range(n_episodes):
         done = False
         env.reset()
         s = []
         a = Qlearning.get_action_epsilon_greedy(s, epsilon)
+        Qlearning.Qvalues.add_state_action_pair(s, a)
         act = Actions[a]
         new_s = s.copy()
         rewards=0
         current_similarity = 0
         for steps in range(max_nodes_number+1):
+            count +=1
             # Evolve one step|
             formula, r, done, current_similarity = env.step(act, steps)
-            Qlearning.Qvalues.add_state_action_pair(s, a)
             rewards+=r
             # Save observed reward
             new_s += [a]
@@ -284,23 +293,25 @@ def single_instance_Qlearning(target, epsilon ):
             act = Actions[new_a]
             a = new_a
             s = new_s.copy()
+            Qlearning.Qvalues.add_state_action_pair(s, a)
+
             if done:
                 atomic_predicates.append(formula)
-                with open(f'Qlearning_instance_{target}_formulas_{epsilon}', 'wb') as file:
+                with open(f'Qlearning_instance_{target}_formulas_{epsilon_0}_constant', 'wb') as file:
                     pickle.dump(atomic_predicates, file)
                 break
 
-            # if count > tstar:
-            #     # UPDATE OF LEARNING
-            #     SARSA.lr_v = lr_v_0/(1 + 0.003*(count - tstar)**0.75)
-            #     # UPDATE OF EPSILON
-            #     epsilon = epsilon_0/(1. + 0.005*(count - tstar)**1.05)
-        print(f"instance: {target}  eps:{epsilon}  episode: {i}  similarity:{current_similarity}" )
+
+            # UPDATE OF LEARNING
+            Qlearning.lr_v = lr_v_0/(1 + 0.003*(count )**0.75)
+            # UPDATE OF EPSILON
+            # epsilon = epsilon_0/(1. + 0.005*(count)**1.05)
+        print(f"instance: {target}  eps:{epsilon_0}  episode: {i}  similarity:{current_similarity}" )
         rewards_data.append([rewards, current_similarity])
-        with open(f'Qlearning_instance_{target}_rewards_data_{epsilon}', 'wb') as file:
+        with open(f'Qlearning_instance_{target}_rewards_data_{epsilon_0}_constant', 'wb') as file:
                 pickle.dump(rewards_data, file)
         if i%100==0:
-            with open(f'Qlearning_Q_{target}_data_{epsilon}', 'wb') as file:
+            with open(f'Qlearning_Q_{target}_data_{epsilon_0}_constant', 'wb') as file:
                 pickle.dump(Qlearning, file)
 
 def single_instance_EXPECTED_SARSA(target, epsilon_0 ):
@@ -372,6 +383,7 @@ def single_instance_EXPECTED_SARSA(target, epsilon_0 ):
         env.reset()
         s = []
         a = EXPECTED_SARSA.get_action_epsilon_greedy(s, epsilon)
+        EXPECTED_SARSA.Qvalues.add_state_action_pair(s, a)
         act = Actions[a]
         new_s = s.copy()
         rewards=0
@@ -380,34 +392,34 @@ def single_instance_EXPECTED_SARSA(target, epsilon_0 ):
             count +=1
             # Evolve one step|
             formula, r, done, current_similarity = env.step(act, steps)
-            EXPECTED_SARSA.Qvalues.add_state_action_pair(s, a)
             rewards+=r
             # Save observed reward
             new_s += [a]
             # Choose new action index
             new_a = EXPECTED_SARSA.get_action_epsilon_greedy(new_s, epsilon)
-            if r>0:
-                print(r)
+            # if r>0:
+            #     print(r)
             EXPECTED_SARSA.single_step_update(s, a, r, new_s, done, epsilon)
             act = Actions[new_a]
             a = new_a
             s = new_s.copy()
+            EXPECTED_SARSA.Qvalues.add_state_action_pair(s, a)
             if done:
                 atomic_predicates.append(formula)
-                with open(f'EXPECTED_SARSA_instance_{target}_formulas_{epsilon_0}', 'wb') as file:
+                with open(f'EXPECTED_SARSA_instance_{target}_formulas_{epsilon_0}_constant', 'wb') as file:
                     pickle.dump(atomic_predicates, file)
                 break
 
                 # UPDATE OF LEARNING
             EXPECTED_SARSA.lr_v = lr_v_0/(1 + 0.003*(count)**0.75)
             # UPDATE OF EPSILON
-            epsilon = epsilon_0/(1. + 0.005*(count)**1.05)
+            # epsilon = epsilon_0/(1. + 0.005*(count)**1.05)
         print(f"instance: {target}  eps:{epsilon}  episode: {i}  similarity:{current_similarity}" )
         rewards_data.append([rewards, current_similarity])
-        with open(f'EXPECTED_SARSA_instance_{target}_rewards_data_{epsilon_0}', 'wb') as file:
+        with open(f'EXPECTED_SARSA_instance_{target}_rewards_data_{epsilon_0}_constant', 'wb') as file:
                 pickle.dump(rewards_data, file)
         if i%100==0:
-            with open(f'EXPECTED_SARSA_Q_{target}_data_{epsilon_0}', 'wb') as file:
+            with open(f'EXPECTED_SARSA_Q_{target}_data_{epsilon_0}_constant', 'wb') as file:
                 pickle.dump(EXPECTED_SARSA, file)
 
 
@@ -415,11 +427,31 @@ def single_instance_EXPECTED_SARSA(target, epsilon_0 ):
 
 
 if __name__ == "__main__":  # pragma: no cover
+    # single_instance_EXPECTED_SARSA(0, 0.01)
+
     def error_callback_function(error):
         print(f'Error: {error}')
     process_number = len(os.sched_getaffinity(0))
     pool = mp.Pool(process_number)
     results = [pool.apply_async(single_instance_EXPECTED_SARSA, (seed,epsilon), error_callback=error_callback_function) for seed in
-            list(range(10)) for epsilon in [0.01,0.05,0.1]]
+            list(range(10)) for epsilon in [0.1,0.3,0.5]]
     pool.close()
     pool.join()
+    #
+    # def error_callback_function(error):
+    #     print(f'Error: {error}')
+    # process_number = len(os.sched_getaffinity(0))
+    # pool = mp.Pool(process_number)
+    # results = [pool.apply_async(single_instance_SARSA, (seed,epsilon), error_callback=error_callback_function) for seed in
+    #         list(range(10)) for epsilon in [0.1,0.3,0.5]]
+    # pool.close()
+    # pool.join()
+    #
+    # def error_callback_function(error):
+    #     print(f'Error: {error}')
+    # process_number = len(os.sched_getaffinity(0))
+    # pool = mp.Pool(process_number)
+    # results = [pool.apply_async(single_instance_Qlearning, (seed,epsilon), error_callback=error_callback_function) for seed in
+    #         list(range(10)) for epsilon in [0.1,0.3,0.5]]
+    # pool.close()
+    # pool.join()

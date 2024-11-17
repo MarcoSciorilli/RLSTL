@@ -41,7 +41,7 @@ class EXPECTED_SARSA_TDControl():
             # the action (i.e. the policy) !
             all_qvalues, all_actions = self.Qvalues.get_all_qvalues(new_s)
             deltaQ = (r +
-                      self.gamma * ( all_qvalues * self.policy(new_s, eps)[all_actions])
+                      self.gamma * ( np.sum(all_qvalues * self.policy(new_s, eps)[all_actions]))
                                                                       - self.Qvalues.get_state_action_pair_value( s,a))
         self.Qvalues.update_state_action_pair(s, a, self.lr_v * deltaQ)
 
@@ -52,7 +52,6 @@ class EXPECTED_SARSA_TDControl():
         Chooses action at random using an epsilon-greedy policy wrt the current Q(s,a).
         """
         ran = np.random.rand()
-
         if (ran < eps):
             # probability is uniform for all actions!
             prob_actions = self.random_actions_probabilities
