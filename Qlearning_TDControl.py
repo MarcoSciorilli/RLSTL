@@ -30,11 +30,9 @@ class Qlearning_TDControl():
         """
         if done:
             # in TD(0) it was
-            # delta = (r + 0 - self.values[s])
             deltaQ = (r + 0 - self.Qvalues.get_state_action_pair_value(s, a) )
         else:
             # in TD(0) it was
-            # delta = (r + gamma*self.values[new_s] - self.values[s])
             # Notice that I evaluate Qvalue at the new_s only for the action new_a that I really took!
             maxQ_over_actions = self.Qvalues.find_best_qvalue(new_s )
 
@@ -52,7 +50,7 @@ class Qlearning_TDControl():
         ran = np.random.rand()
 
         if (ran < eps):
-            # probability is uniform for all actions!
+            # probability is uniform for all actions nodes
             prob_actions = self.random_actions_probabilities
 
         else:

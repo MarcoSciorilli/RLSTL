@@ -30,12 +30,9 @@ class SARSA_TDControl():
         Employs the EXPERIENCED action in the new state  <- Q(S_new, A_new).
         """
         if done:
-            # in TD(0) it was
-            # delta = (r + 0 - self.values[s])
             deltaQ = (r + 0 - self.Qvalues.get_state_action_pair_value(s, a))
         else:
-            # in TD(0) it was
-            # delta = (r + gamma*self.values[new_s] - self.values[s])
+
             # Notice that I evaluate Qvalue at the new_s only for the action new_a that I really took!
             deltaQ = (r +
                       self.gamma * self.Qvalues.get_state_action_pair_value(new_s, new_a)

@@ -2,11 +2,20 @@ import numpy as np
 
 class QValueNode(object):
     def __init__(self):
+        """
+        Node datastructure for QValueTree, it store the state-action value, and children (next state action pairs)
+        """
         self.value = 0
         self.children = {}
 
 class QValueTree(object):
     def __init__(self):
+        """
+        Data structure to store all the state-action pairs, storing a new one only when it is visited.
+        A state is given from a list of the action picked so far (as it directly translate into a defined STL tree), and
+        the action is the STL operator to chose at this episode.
+        The class implements all the methods required by the Qlearning, SARSA and EXPECTED SARSA on this new datastructure
+        """
         self.root = QValueNode()
 
 

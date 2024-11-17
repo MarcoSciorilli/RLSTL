@@ -53,8 +53,6 @@ def single_instance_random(target):
     prob_right_unbound_time_operator = 0.1  # probability of a temporal operator to have a time bound of the type [a, infty]
     leaf_probability = 0.5  # probability of generating a leaf (always zero for root)
     # Generate a target random STL formula
-    # set environment!-----------------------
-    # ----------------- Start   End
     target_embedding = StlGenerator(leaf_prob=leaf_probability, time_bound_max_range=max_right_bound,
                            unbound_prob=prob_unbound_time_operator, right_unbound_prob=prob_right_unbound_time_operator,
                            threshold_sd=atom_threshold_sd, inner_node_prob=[0.2, 0.2, 0.2, 0.2, 0.2, 0],
@@ -65,7 +63,7 @@ def single_instance_random(target):
 
     rewards_data = []
     max_nodes_number = 30
-
+    # Set enviroment
     env = STLTreeEnv(target_embedding,max_nodes_number)
 
     atomic_predicates= []
@@ -132,7 +130,6 @@ def single_instance_SARSA(target, epsilon_0 ):
     prob_right_unbound_time_operator = 0.1  # probability of a temporal operator to have a time bound of the type [a, infty]
     leaf_probability = 0.5  # probability of generating a leaf (always zero for root)
     # Generate a target random STL formula
-    # set environment!-----------------------
     # ----------------- Start   End
     target_embedding = StlGenerator(leaf_prob=leaf_probability, time_bound_max_range=max_right_bound,
                            unbound_prob=prob_unbound_time_operator, right_unbound_prob=prob_right_unbound_time_operator,
@@ -149,6 +146,7 @@ def single_instance_SARSA(target, epsilon_0 ):
 
     rewards_data = []
     max_nodes_number = 30
+    # set environment!-----------------------
 
     env = STLTreeEnv(target_embedding,max_nodes_number)
     epsilon = epsilon_0
